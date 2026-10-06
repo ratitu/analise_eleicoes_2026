@@ -34,8 +34,8 @@ ALVO_BYTES_REGIAO = 2_500_000
 
 CORES = {"FLAVIO BOLSONARO": "#1f5fbf", "LULA": "#d92b2b"}
 COR_EMPATE = "#b9b9b9"
-COR_LIMITE = "#2f3e46"
-PESO_LIMITE = 1.1
+COR_LIMITE = "#ffe066"
+PESO_LIMITE = 3.0
 
 UFS = {
     "ac": "Acre", "al": "Alagoas", "ap": "Amapá", "am": "Amazonas",
@@ -314,7 +314,7 @@ def montar(rotulo, feats, por_cand, total, excluir_centro, destino, zoom,
             style_function=lambda _: {
                 "color": COR_LIMITE,
                 "weight": PESO_LIMITE,
-                "opacity": 0.52,
+                "opacity": 0.95,
             },
             overlay=True,
             control=True,
