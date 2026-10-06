@@ -1,0 +1,8 @@
+# Dados e artefatos gerados — nunca versionar.
+# O index.html versionado é o único artefato de saída que fica no repo.
+tse_2026_resultados/
+
+__pycache__/
+*.pyc
+.omo/
+.DS_Store
