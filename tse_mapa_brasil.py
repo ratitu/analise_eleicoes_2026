@@ -135,6 +135,38 @@ def juncao_chaves(dicionario):
     return {sem_acento(k): v for k, v in dicionario.items()}
 
 
+def ler_limites_estados():
+    caminho = os.path.join(BASE, "mapa_brasil", "Estados_Brasil.shp")
+    if not os.path.exists(caminho):
+        print(f"  shapefile de estados ausente: {caminho}")
+        return None
+    grade = gpd.read_file(caminho)
+    grade["geometry"] = grade.geometry.apply(
+        lambda g: shapely.make_valid(g) if g is not None and not g.is_valid else g
+    )
+    contorno = shapely.union_all(list(grade.geometry)).boundary
+    if contorno.is_empty:
+        print("  limites de estado vazios")
+        return None
+    linhas = [contorno] if contorno.geom_type == "LineString" else list(contorno.geoms)
+    coordenadas = [
+        [[round(x, 4), round(y, 4)] for x, y in p.coords]
+        for p in linhas
+        if not p.is_empty
+    ]
+    print(f"  limites de estado: {len(coordenadas)} linhas de {len(grade)} estados")
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {},
+                "geometry": {"type": "MultiLineString", "coordinates": coordenadas},
+            }
+        ],
+    }
+
+
 def numero(valor):
     if valor is None:
         return None
@@ -514,6 +546,7 @@ def main():
     feats_html = json.loads(gdf.to_json())["features"]
     feats_html, tol = htmlmapa.decidir_tolerancia(feats_html, ALVO_BYTES_HTML)
     print(f"  tolerancia adotada: {tol}")
+    limites = ler_limites_estados()
     htmlmapa.montar(
         "Brasil",
         feats_html,
@@ -527,6 +560,7 @@ def main():
         analises=analises_destaque(gdf),
         legenda=montar_legenda(gdf),
         tiles="Esri.WorldImagery",
+        limites=limites,
     )
 
     print("\nArquivos em " + saida)

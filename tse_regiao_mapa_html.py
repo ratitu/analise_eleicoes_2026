@@ -34,6 +34,8 @@ ALVO_BYTES_REGIAO = 2_500_000
 
 CORES = {"FLAVIO BOLSONARO": "#1f5fbf", "LULA": "#d92b2b"}
 COR_EMPATE = "#b9b9b9"
+COR_LIMITE = "#2f3e46"
+PESO_LIMITE = 1.1
 
 UFS = {
     "ac": "Acre", "al": "Alagoas", "ap": "Amapá", "am": "Amazonas",
@@ -255,7 +257,7 @@ def painel_analises(analises):
 
 def montar(rotulo, feats, por_cand, total, excluir_centro, destino, zoom,
            campos_extras=(), usar_cor_prop=False, analises=None, legenda=None,
-           tiles="CartoDB positron"):
+           tiles="CartoDB positron", limites=None):
     base = [f for f in feats if f["properties"].get("municipio") not in excluir_centro]
     if not base:
         base = feats
@@ -305,6 +307,23 @@ def montar(rotulo, feats, por_cand, total, excluir_centro, destino, zoom,
         zoom_on_click=True,
     )
     camada.add_to(mapa)
+    if limites is not None:
+        folha = folium.GeoJson(
+            data=limites,
+            name="Limites dos estados",
+            style_function=lambda _: {
+                "color": COR_LIMITE,
+                "weight": PESO_LIMITE,
+                "opacity": 0.52,
+            },
+            overlay=True,
+            control=True,
+            show=True,
+            smooth_factor=0.6,
+            interactive=False,
+        )
+        folha.add_to(mapa)
+        folium.LayerControl(collapsed=True, position="bottomright").add_to(mapa)
 
     contagem = defaultdict(int)
     for f in feats:
