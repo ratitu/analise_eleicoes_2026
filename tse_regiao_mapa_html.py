@@ -231,16 +231,18 @@ def script_colapsaveis():
     )
 
 
-def painel_analises(analises):
+def painel_analises(analises, colapsado=False):
+    seta = "&#9656;" if colapsado else "&#9660;"
+    abertura = " style='display:none'" if colapsado else ""
     linhas = [
         "<div class='colapsavel-cabecalho' data-alvo='corpo-destaques' "
         "style='font-weight:bold;font-size:13px;margin-bottom:6px;"
         "cursor:pointer;user-select:none;display:flex;"
         "justify-content:space-between;align-items:center;gap:12px'>"
         "<span>Destaques</span>"
-        "<span class='colapsavel-seta' style='font-size:10px'>&#9660;</span>"
+        f"<span class='colapsavel-seta' style='font-size:10px'>{seta}</span>"
         "</div>"
-        "<div id='corpo-destaques'>"
+        f"<div id='corpo-destaques'{abertura}>"
     ]
     for rotulo, detalhe in analises:
         linhas.append(linha_analise(rotulo, detalhe))
@@ -257,7 +259,7 @@ def painel_analises(analises):
 
 def montar(rotulo, feats, por_cand, total, excluir_centro, destino, zoom,
            campos_extras=(), usar_cor_prop=False, analises=None, legenda=None,
-           tiles="CartoDB positron", limites=None):
+           tiles="CartoDB positron", limites=None, colapsado_inicial=False):
     base = [f for f in feats if f["properties"].get("municipio") not in excluir_centro]
     if not base:
         base = feats
@@ -330,15 +332,17 @@ def montar(rotulo, feats, por_cand, total, excluir_centro, destino, zoom,
         venceu = f["properties"].get("venceu")
         contagem[venceu if venceu in CORES else "EMPATE"] += 1
 
+    seta_legenda = "&#9656;" if colapsado_inicial else "&#9660;"
+    abertura_legenda = " style='display:none'" if colapsado_inicial else ""
     linhas = [
         "<div class='colapsavel-cabecalho' data-alvo='corpo-legenda' "
         "style='font-weight:bold;font-size:14px;margin-bottom:4px;"
         "cursor:pointer;user-select:none;display:flex;"
         "justify-content:space-between;align-items:center;gap:12px'>"
         f"<span>Presidencial 2026 · {rotulo} · 1º turno</span>"
-        "<span class='colapsavel-seta' style='font-size:10px'>&#9660;</span>"
+        f"<span class='colapsavel-seta' style='font-size:10px'>{seta_legenda}</span>"
         "</div>"
-        "<div id='corpo-legenda'>"
+        f"<div id='corpo-legenda'{abertura_legenda}>"
     ]
     if legenda is None:
         linhas.append(linha_swatch(
@@ -380,7 +384,7 @@ def montar(rotulo, feats, por_cand, total, excluir_centro, destino, zoom,
 
     if analises:
         mapa.get_root().html.add_child(
-            elements.Element(painel_analises(analises))
+            elements.Element(painel_analises(analises, colapsado_inicial))
         )
         mapa.get_root().html.add_child(
             elements.Element(script_destaques(mapa.get_name(), camada.get_name()))

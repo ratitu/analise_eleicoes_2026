@@ -545,6 +545,7 @@ def main():
         legenda=montar_legenda(gdf),
         tiles="Esri.WorldImagery",
         limites=limites,
+        colapsado_inicial=True,
     )
 
     print("\nArquivos em " + saida)
