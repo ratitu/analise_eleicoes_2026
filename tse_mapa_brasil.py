@@ -142,26 +142,36 @@ def ler_limites_estados():
         return None
     grade = gpd.read_file(caminho)
     grade["geometry"] = grade.geometry.apply(
-        lambda g: shapely.make_valid(g) if g is not None and not g.is_valid else g
+        lambda g: somente_poligonos(
+            shapely.make_valid(g) if g is not None and not g.is_valid else g
+        )
     )
-    contorno = shapely.union_all(list(grade.geometry)).boundary
-    if contorno.is_empty:
-        print("  limites de estado vazios")
-        return None
-    linhas = [contorno] if contorno.geom_type == "LineString" else list(contorno.geoms)
-    coordenadas = [
-        [[round(x, 4), round(y, 4)] for x, y in p.coords]
-        for p in linhas
-        if not p.is_empty
-    ]
-    print(f"  limites de estado: {len(coordenadas)} linhas de {len(grade)} estados")
+    linhas = []
+    for geom in grade.geometry:
+        if geom is None or geom.is_empty:
+            continue
+        contorno = geom.boundary
+        if contorno is None or contorno.is_empty:
+            continue
+        partes = (
+            [contorno]
+            if contorno.geom_type == "LineString"
+            else list(contorno.geoms)
+        )
+        for parte in partes:
+            if parte.is_empty:
+                continue
+            coords = [[round(x, 4), round(y, 4)] for x, y in parte.coords]
+            if len(coords) > 1:
+                linhas.append(coords)
+    print(f"  limites de estado: {len(linhas)} segmentos de {len(grade)} estados")
     return {
         "type": "FeatureCollection",
         "features": [
             {
                 "type": "Feature",
                 "properties": {},
-                "geometry": {"type": "MultiLineString", "coordinates": coordenadas},
+                "geometry": {"type": "MultiLineString", "coordinates": linhas},
             }
         ],
     }
