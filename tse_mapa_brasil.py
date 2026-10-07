@@ -50,6 +50,7 @@ CAPITAIS = {
 }
 
 MAIORES_EXTRAS = 30
+QUANTIDADE_PROXIMOS_EMPATE = 5
 LADO = 16.0
 MINIMO = 10.0
 ALVO_BYTES_HTML = 9_000_000
@@ -315,21 +316,12 @@ def maior_por(gdf, familia, coluna):
     return alvo.loc[alvo[coluna].idxmax()]
 
 
-def menor_margem(gdf):
-    alvo = gdf[gdf["margem_pp"].notna()]
+def proximos_empate(gdf, quantidade):
+    alvo = gdf[gdf["familia"] != "empate"]
+    alvo = alvo[alvo["margem_pp"].notna()]
     if alvo.empty:
         return None
-    return alvo.loc[alvo["margem_pp"].idxmin()]
-
-
-def maior_pct(gdf, familia):
-    alvo = gdf[gdf["familia"] == familia]
-    if alvo.empty:
-        return None
-    valores = alvo["pct"].map(numero)
-    if valores.isna().all():
-        return None
-    return alvo.loc[valores.idxmax()]
+    return alvo.nsmallest(quantidade, "margem_pp").sort_values("margem_pp")
 
 
 def nome_municipio(linha):
@@ -352,12 +344,7 @@ def analises_destaque(gdf):
     mais_votos_bolso = maior_por(gdf, "pl", "votos")
     maior_margem_lula = maior_por(gdf, "pt", "margem_pp")
     maior_margem_bolso = maior_por(gdf, "pl", "margem_pp")
-    maior_pct_lula = maior_pct(gdf, "pt")
-    maior_pct_bolso = maior_pct(gdf, "pl")
-    mais_proximo = menor_margem(gdf)
-    divergente = mais_proximo
-    if mais_proximo is not None and mais_proximo["familia"] == "empate":
-        divergente = menor_margem(gdf[gdf["familia"] != "empate"])
+    proximos = proximos_empate(gdf, QUANTIDADE_PROXIMOS_EMPATE)
 
     analises = []
     if mais_votos_lula is not None:
@@ -376,22 +363,6 @@ def analises_destaque(gdf):
                 f" · {mapa.br(mais_votos_bolso['votos'], 0)} votos",
             ],
         ))
-    if maior_pct_lula is not None:
-        analises.append((
-            "Maior percentual para LULA",
-            [
-                link_municipio(maior_pct_lula),
-                f" · {mapa.br(numero(maior_pct_lula['pct']))}% dos votos",
-            ],
-        ))
-    if maior_pct_bolso is not None:
-        analises.append((
-            "Maior percentual para FLAVIO BOLSONARO",
-            [
-                link_municipio(maior_pct_bolso),
-                f" · {mapa.br(numero(maior_pct_bolso['pct']))}% dos votos",
-            ],
-        ))
     if maior_margem_lula is not None:
         analises.append((
             "Maior vantagem para LULA",
@@ -408,13 +379,16 @@ def analises_destaque(gdf):
                 f" · {mapa.br(maior_margem_bolso['margem_pp'])} pp",
             ],
         ))
-    if divergente is not None:
+    if proximos is not None:
+        partes = []
+        for indice, (_, linha) in enumerate(proximos.iterrows()):
+            if indice:
+                partes.append(" · ")
+            partes.append(link_municipio(linha))
+            partes.append(f" {mapa.br(linha['margem_pp'])} pp")
         analises.append((
-            "Mais próximo de um empate",
-            [
-                link_municipio(divergente),
-                f" · {mapa.br(divergente['margem_pp'])} pp",
-            ],
+            f"Mais próximos de um empate ({len(proximos)})",
+            partes,
         ))
     empates = municipios_empate(gdf)
     if empates is not None:
